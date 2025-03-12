@@ -1,6 +1,6 @@
 {
-    "name": "workspace",
-    "short_name": "workspace",
+    "name": "webtest",
+    "short_name": "webtest",
     "start_url": "/webtest/",
     "display": "standalone",
     "background_color": "#0175C2",
