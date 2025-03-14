@@ -15,17 +15,19 @@
     the `--base-href` argument provided to `flutter build`.
   -->
   <base href="/webtest/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="workspace">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
+  <!-- 强制禁用现代浏览器特性（网页4的CSP策略） -->
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'">
+  <!-- 引入Polyfill解决ES6+兼容问题（网页6建议） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/7.12.1/polyfill.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/resize-observer-polyfill@1.5.1/dist/ResizeObserver.global.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/core-js/3.26.1/minified.js"></script>
+  
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
@@ -33,6 +35,6 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="main.dart.js" type="application/javascript"></script>
 </body>
 </html>
