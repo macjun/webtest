@@ -3,126 +3,441 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coze 聊天助手</title>
+    <title>player</title>
+    <!-- Video.js 核心样式 -->
+    <!-- <link href="https://vjs.zencdn.net/7.14.3/video-js.min.css" rel="stylesheet"> -->
+    <link href="./js/video-js.min.css" rel="stylesheet">
     <style>
-        /* 网页8中的布局优化 */
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+        /* 重置默认样式并设置全屏容器 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .chat-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            height: 70vh;
+
+        html, body {
+            width: 100vw;    /* 视口宽度 */
+            height: 100vh;   /* 视口高度 */
+            overflow: hidden; /* 隐藏滚动条 */
+            background: #000;
+        }
+
+        /* 主容器设置 */
+        .container {
             display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            background: #000;
         }
-        #chatBox {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
+
+        /* 播放器样式 */
+        #my-player {
+            width: 100%;      /* 默认宽度 */
+            max-width: 7680px; /* 最大宽度限制 */
+            height: auto;     /* 高度自适应 */
+            aspect-ratio: 16/9; /* 固定宽高比 */
+            background: #000;
         }
-        .message {
-            margin: 10px 0;
-            padding: 10px 15px;
-            border-radius: 15px;
-            max-width: 80%;
+
+        /* 视频元素样式 */
+        .video-js video {
+            object-fit: contain; /* 保持视频原始比例 */
+            background: #000;
         }
-        .user-message {
-            background: #e3f2fd;
-            margin-left: auto;
+
+        @media (max-width: 7680px) {
+            #my-player {
+                width: 100%; /* 移动端全宽显示 */
+                background: #000;
+            }
         }
-        .bot-message {
-            background: #f5f5f5;
-            margin-right: auto;
-        }
-        #inputArea {
-            display: flex;
-            padding: 20px;
-            border-top: 1px solid #ddd;
-        }
-        #userInput {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 12px 25px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-        }
+
+        .vjs-error-display { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div id="chatBox"></div>
-        <div id="inputArea">
-            <input type="text" id="userInput" placeholder="输入消息..." />
-            <button onclick="sendMessage()">发送</button>
-        </div>
+    <!-- 播放器容器 -->
+    <div class="container">
+        <video-js
+            id="my-player"
+            class="video-js vjs-default-skin vjs-big-play-centered"
+            preload="auto"
+            playsinline
+            data-setup='{"autoplay": true}'>
+            <!-- <source src="https://media.w3.org/2010/05/bunny/trailer.mp4" type="video/mp4"> -->
+        </video-js>
     </div>
 
+    <!-- Video.js 核心脚本 -->
+    <!-- <script src="https://vjs.zencdn.net/7.14.3/video.min.js"></script> -->
+    <!-- 引入 Video.js 8.x -->
+    <script src="./js/video.js"></script>
+    <script src="./js/videojs-contrib-eme.min.js"></script>
+    <script src="./js/web-engine-console.min.js"></script>
     <script>
-        // 网页9中的AJAX交互优化方案
-        const chatBox = document.getElementById('chatBox');
-        const userInput = document.getElementById('userInput');
+        const licenseUrl = 'https://localhost:8080/api/drm/adapter/licenseServer/license/v1';
 
-        // 回车发送支持
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
+        // 初始化播放器配置
+        const player = videojs('my-player', {
+            controls: false,
+            fluid: true,        // 启用流体模式[3,4](@ref)
+            responsive: true,   // 响应式布局
+            controlBar: {
+                volumePanel: {
+                    inline: false  // 优化移动端显示
+                }
+            },
+            html5: {
+                vhs: {
+                overrideNative: true,    // VideoJS 8.x 使用 vhs 替代 hls
+                withCredentials: false
+                },
+                nativeAudioTracks: false,
+                nativeVideoTracks: false,
             }
         });
+        
 
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message) return;
+        // 页面加载完成后初始化播放器
+        document.addEventListener('DOMContentLoaded', () => {
 
-            // 清空输入框
-            userInput.value = '';
-            
-            // 添加用户消息
-            appendMessage(message, true);
+            playWithConfig();
 
+            prepareVideojs();
+
+            const options = {
+                        src: 'http://127.0.0.1/8dc759ff2c2ff37c59382253bec0557e/8dc759ff2c2ff37c59382253bec0557e.m3u8',
+                        type: 'application/x-mpegURL',
+                    };
+            player.src(options);
+
+            player.load(options)
+
+            // player.src({ 
+            //     src: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+            // });
+            // player.load();
+        });
+
+        // window.addEventListener("flutterInAppWebViewPlatformReady", function(event) {
+        //     window.flutter_inappwebview.callHandler('jsToFlutter', {data: 'Hello'}).then(response => console.log(response)); // 输出：Dart 返回的数据       
+        // });
+
+
+        function playWithConfig(configs) {
+            const config = {
+                trackerAnnounce: ['ws://wrtwebapp.inner011.xyz/ws'],
+                params: {
+                    streamId: '8dc759ff2c2ff37c59382253bec0557e',
+                    APKSN: "sdfalasjdfasldf",
+                    RELEASEID: "sdfalasjdfasldf",
+                    APPVER: 234234424,
+                    connectId: '6214114123', // 节点唯一标识，不能以 0 为开头，自行维护
+                    protocol: 0,
+                    msgType: 6000,
+                    releaseId: 100200,
+                    playType: "LIVE", // 全大写，小写不生效
+                    peerType: 0
+                },
+                player: player, // 传入播放器实例
+                // reportHost: 'https://bitmetric.inner013.xyz:2086' // 大数据上报域名，生产环境传入，其他环境不传或传空
+            }
+            window.hybridLoader = new window.p2pml.core.HybridLoader(config); // 实例不一定赋值到 window，可以自行维护
+            // play 时才获取 wrt 和 peer 等信息
+            window.hybridLoader.play({ streamId: 'webrtc-test' })
+        }
+
+        // window.hybridLoader.getFirstFloorM3u8(streamId) // 播放器获取一级 m3u8
+        // window.hybridLoader.getVideoSegmentsM3u8(streamId) // 播放器获取 video m3u8
+        // window.hybridLoader.getAudioSegmentsM3u8(streamId) // 播放器获取 audio m3u8
+        // window.hybridLoader.getSegmentData(streamId, uri) // 播放器获取切片数据，uri 为切片地址（播放器会自动获取）
+
+        function initPlayer() {
             try {
-                // 网页8中的fetch请求示例
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message })
-                });
+                // 创建播放器选项，配置 EME
+                const options = {
+                    html5: {
+                        vhs: {
+                        overrideNative: true,    // VideoJS 8.x 使用 vhs 替代 hls
+                        withCredentials: false
+                        },
+                        nativeAudioTracks: false,
+                        nativeVideoTracks: false,
+                    }
+                };
 
-                if (!response.ok) {
-                    throw new Error(`HTTP错误 ${response.status}`);
-                }
+                // 初始化播放器
+                const player = videojs('my-player', options);
+                player.ready(() => {
+                    // 初始化 EME 插件
+                    player.eme();
 
-                const data = await response.json();
-                appendMessage(data.message, false);
+                    // 配置 DRM
+                    const emeOptions = {
+                        keySystems: {
+                            "com.widevine.alpha": {
+                                // "audioRobustness": "SW_SECURE_CRYPTO",
+                                // "videoRobustness": "SW_SECURE_CRYPTO",
+                                // priority: 0,
+                                getLicense: (emeOptions, keyMessage, callback) => {
+                                console.log("testtest-Debug-com.widevine.alpha-Widevine getLicense called", {
+                                    emeOptions,
+                                    keyMessage: btoa(
+                                    String.fromCharCode(...new Uint8Array(keyMessage))
+                                    ),
+                                });
+                                const baseKeyMsg = btoa(
+                                    String.fromCharCode(...new Uint8Array(keyMessage))
+                                    )
+                                const data = {
+                                    "sn":"lasjdlfasdflasdflafh",
+                                    "drmSystem":"widevine",
+                                    "contentId":"9601sit",
+                                    "originalRequestInfo":baseKeyMsg
+                                };
+
+                                fetch(licenseUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                    'Content-Type': 'application/json',  // 根据 API 要求设置适当的 Content-Type
+                                    },
+                                    body: JSON.stringify(data),  // 将对象转换为 JSON 字符串
+                                }).then(response => {
+                                    if (!response.ok) {
+                                        throw new Error('Network response was not ok');
+                                    }
+                                    return response.json();  // 解析 JSON 响应
+                                }).then(data => {
+                                    callback(null, byteToUint8Array(base64js.toByteArray(data.result.license)).buffer);
+                                    console.log('Success:', data);  // 处理成功响应
+                                }).catch(error => {
+                                    callback(error);
+                                    console.error('Error:', error);  // 处理错误
+                                });
+                                },
+                            },
+                        }
+                    };
+                    const options = {
+                        src: 'http://127.0.0.1/RH-multidrm.m3u8',
+                        type: 'application/x-mpegURL',
+                        emeEnabled: true,  // 启用 EME
+                        keySystems: emeOptions.keySystems
+                    };
+                    // 配置 EME
+                    player.src(options);
+
+                    player.load(options)
+
+                    const config = {
+                        // trackerAnnounce: [`ws://dev-live.wtracker.inner013.xyz:8888/ws`],
+                        trackerAnnounce: [`wss://dev-live.wtracker.inner013.xyz:8889/ws`],
+                        reportPlayerStatus: true,
+                        useP2P: false, // 压测需要关闭 p2p
+                        player,
+                        params: {
+                            connectId: `6958382911`,
+                            playType: "LIVE",
+                            APKSN: `6958382911`,
+                            RELEASEID: "10021",
+                            APPVER: 10002,
+                            ever: 1.0,
+                            cid: `6958382911`,
+                            app_name: `webrtc_pressure_test`,
+                        },
+                    };
+
+                    window.HybridLoader = new window.p2pml.core.HybridLoader(config);
+                    window.HybridLoader.play({ streamId: 'RH-multidrm' });
+                    }
+                )
+
             } catch (error) {
-                appendMessage(`请求失败：${error.message}`, false);
             }
         }
 
-        function appendMessage(content, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-            messageDiv.textContent = content;
-            chatBox.appendChild(messageDiv);
+        
+        function prepareVideojs() {
+            const setWriteKeys = ["status", "statusText", "response", "responseText", "readyState"];
+            const xhrSend = XMLHttpRequest.prototype.send;
+
+            XMLHttpRequest.prototype.send = function (...args) {
+            const url = this.url;
             
-            // 自动滚动到底部
-            chatBox.scrollTop = chatBox.scrollHeight;
+            // 拦截 key URI 请求
+            if (url && url.startsWith("http://127.0.0.2")) {
+                const keyId = url.replace(`http://127.0.0.2/`, "");
+                self.getGooseLicense(keyId).then((res) => {
+                setWriteKeys.forEach((key) => {
+                    Object.defineProperty(this, key, {
+                    writable: true,
+                    });
+                });
+                this.status = 200;
+                this.readyState = 4;
+                this.statusText = "OK";
+                this.response = res;
+                this.responseText = res;
+                this.dispatchEvent(new Event("readystatechange"));
+                });
+                return;
+            }
+            // 以配置的域名前缀来拦截，不影响其他正常的请求响应；
+            // 并且可自定义，不会发起真正的请求，不过这里的域名需要跟 videojs 实例化时的域名保持一致
+            if (url && url.startsWith("http://127.0.0.1")) {
+                setWriteKeys.forEach((key) => {
+                    Object.defineProperty(this, key, {
+                        writable: true,
+                    });
+                });
+                setTimeout(async () => {
+                let response = undefined;
+                const uri = url.slice(url.lastIndexOf("/") + 1, url.length);
+
+                const fn = () => {
+                    if (uri.endsWith(".m4s") || uri.endsWith(".rpp")) {
+                    return window.hybridLoader?.getSegmentData?.('webrtc-test', uri);
+                    }
+                    if (uri.startsWith("audio")) {
+                    return window.HybridLoader?.getAudioSegmentsM3u8?.('webrtc-test');
+                    }
+                    if (uri.startsWith("video")) {
+                    return window.hybridLoader?.getVideoSegmentsM3u8?.('webrtc-test');
+                    }
+                    return window.hybridLoader?.getFirstFloorM3u8?.('webrtc-test');
+                };
+                response = await window.hybridLoader.waitUntil(fn, 180000, 1500);
+                this.status = 200; // 手动改变响应状态和值
+                this.readyState = 4; // 原生xhr中该值改变，会触发 onreadystatechange 方法
+                this.statusText = "OK";
+                this.response = response; // 这里可以自定义 mock 的数据
+                this.responseText = response; // 这里可以自定义mock的数据
+                this.dispatchEvent(new Event("readystatechange"));
+                }, 0);
+            } else {
+                xhrSend.apply(this, args);
+            }
+            };
+        }
+
+        async function getGooseLicense(keyId) {
+            if (cachedLicenseInfo[keyId]) {
+            let { license, expirationDate } = cachedLicenseInfo[keyId];
+            const nowTime = Math.floor(Date.now() / 1000);
+            let cachedLicense = "";
+
+            if (expirationDate === 0 || nowTime > expirationDate) {
+                cachedLicense = this.byteToArrayBuffer(license);
+                return cachedLicense;
+            }
+            }
+            const data = {
+                sn: localId,
+                drmSystem,
+                contentId,
+                keyId,
+            };
+
+            try {
+            const response = await fetch(licenseUrl, {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json", // 根据 API 要求设置适当的 Content-Type
+                },
+                body: JSON.stringify(data), // 将对象转换为 JSON 字符串
+            });
+            const result = await response.json();
+                cachedLicenseInfo[keyId] = result.result;
+                return this.byteToArrayBuffer(cachedLicenseInfo[keyId].license);
+            } catch (error) {
+                return null;
+            }
+        }
+
+
+        function jsFunction(param) {
+            alert('JS Running');
+            console.log('收到Flutter参数:', param);
+            sendToFlutter('88888');
+            return 'JS处理结果';
+        }
+
+        function playerOnUpdate() {
+            player.on('timeupdate', () => {
+                console.log(`当前进度：${player.currentTime()}秒 / 总时长：${player.duration()}秒`);
+                invoke_flutter('playerOnUpdatePosition',player.currentTime());
+                invoke_flutter('playerOnUpdateDuration',player.duration());
+            }); 
+        }
+
+        function playUrl(url) {
+            console.log(`playUrl-----------------： ${url}`);
+            player.src({ 
+                src: url
+            });
+            player.load(); 
+        }
+
+
+        function play() {
+            player.play(); 
+        }
+
+        function pause() {
+            player.pause(); 
+        }
+
+        function seek(args) {
+            player.currentTime(args); 
+        }
+
+
+        function sendToFlutter(msg) {
+            console.log('sendToFlutter:', msg);
+            invoke_flutter('timeAction','111111');
+            // if (window.flutter_inappwebview) {
+            //     // 移动端通道
+            //     console.log('had flutter_inappwebview');
+            //     window.flutter_inappwebview.callHandler('jsToFlutter', msg);
+            // } else {
+            //     console.log('not flutter_inappwebview');
+            //     // Web 端通道
+            //     // 通过 URL Scheme 触发通信
+            //     window.location.href = 'optnetplayer://message?data=' + encodeURIComponent(msg);
+            // }
+        }
+
+        // 窗口大小变化监听
+        window.addEventListener('resize', () => {
+            player.dimensions(
+                player.currentWidth(), 
+                player.currentHeight()
+            );
+        });
+
+        var call_flutter_ = [];
+        function invoke_flutter(func, args) {
+            console.log('call_flutter_ count:', call_flutter_.length);
+            const existingIndex = call_flutter_.findIndex(item => item.func === func);
+
+            if (existingIndex !== -1) {
+                call_flutter_[existingIndex] = { 
+                    ...call_flutter_[existingIndex], 
+                    args: args 
+                };
+            } else {
+                call_flutter_.push({
+                    func: func,
+                    args: args
+                });
+            }
+        }
+
+        // 自动适配移动端触摸事件
+        if ('ontouchstart' in window) {
+            player.addClass('vjs-touch-enabled');
         }
     </script>
 </body>
