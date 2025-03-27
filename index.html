@@ -146,7 +146,7 @@
             }
             window.hybridLoader = new window.p2pml.core.HybridLoader(config); // 实例不一定赋值到 window，可以自行维护
             // play 时才获取 wrt 和 peer 等信息
-            window.hybridLoader.play({ streamId: 'webrtc-test' })
+            window.hybridLoader.play({ streamId: '8dc759ff2c2ff37c59382253bec0557e' })
         }
 
         // window.hybridLoader.getFirstFloorM3u8(streamId) // 播放器获取一级 m3u8
@@ -298,15 +298,15 @@
 
                 const fn = () => {
                     if (uri.endsWith(".m4s") || uri.endsWith(".rpp")) {
-                    return window.hybridLoader?.getSegmentData?.('webrtc-test', uri);
+                    return window.hybridLoader?.getSegmentData?.('8dc759ff2c2ff37c59382253bec0557e', uri);
                     }
                     if (uri.startsWith("audio")) {
-                    return window.HybridLoader?.getAudioSegmentsM3u8?.('webrtc-test');
+                    return window.HybridLoader?.getAudioSegmentsM3u8?.('8dc759ff2c2ff37c59382253bec0557e');
                     }
                     if (uri.startsWith("video")) {
-                    return window.hybridLoader?.getVideoSegmentsM3u8?.('webrtc-test');
+                    return window.hybridLoader?.getVideoSegmentsM3u8?.('8dc759ff2c2ff37c59382253bec0557e');
                     }
-                    return window.hybridLoader?.getFirstFloorM3u8?.('webrtc-test');
+                    return window.hybridLoader?.getFirstFloorM3u8?.('8dc759ff2c2ff37c59382253bec0557e');
                 };
                 response = await window.hybridLoader.waitUntil(fn, 180000, 1500);
                 this.status = 200; // 手动改变响应状态和值
